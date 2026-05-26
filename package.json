@@ -1,0 +1,16 @@
+{
+  "name": "kyrgyzstan-civic-platform",
+  "version": "1.0.0",
+  "description": "Civic awareness platform for Kyrgyzstan",
+  "private": true,
+  "workspaces": [
+    "web",
+    "mobile",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "type-check": "npm run type-check --workspaces"
+  }
+}

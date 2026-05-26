@@ -1,0 +1,12 @@
+{
+  "name": "@civic-platform/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities",
+  "main": "index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "typescript": "^5.3.3"
+  }
+}
