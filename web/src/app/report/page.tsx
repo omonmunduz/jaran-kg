@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { IncidentForm } from '@/components/IncidentForm';
+import { ensureUserExists } from '@/lib/incidents';
 
 export default function ReportPage() {
   const router = useRouter();
@@ -20,6 +21,9 @@ export default function ReportPage() {
         router.push('/auth/login');
         return;
       }
+
+      // Ensure user exists in users table
+      await ensureUserExists(session.user.id, session.user.user_metadata?.username);
 
       setUserId(session.user.id);
       setLoading(false);
