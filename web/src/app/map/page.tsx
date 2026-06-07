@@ -54,9 +54,9 @@ export default function MapPage() {
 
   return (
     <main className="min-h-screen bg-black">
-      <div className="h-screen flex overflow-hidden">
-        {/* Left Sidebar */}
-        <div className="w-96 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
+      <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
+        {/* Left Sidebar - Hidden on Mobile */}
+        <div className="hidden lg:flex lg:w-96 bg-gray-900 border-r border-gray-800 flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-gray-800">
             <h1 className="text-xl font-bold text-white mb-4">Incidents</h1>
@@ -146,7 +146,7 @@ export default function MapPage() {
         </div>
 
         {/* Map Section */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
           {loading ? (
             <div className="flex-1 flex items-center justify-center bg-gray-800">
               <div className="text-gray-400">Loading map...</div>
@@ -159,28 +159,65 @@ export default function MapPage() {
               />
             </div>
           )}
-        </div>
 
-        {/* Detail Overlay Panel (Mobile/Tablet) */}
-        {selectedIncident && (
-          <div className="hidden lg:block absolute bottom-4 right-4 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-lg max-h-96 overflow-y-auto z-10">
-            <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-              <h2 className="font-bold text-white">Details</h2>
-              <button
-                onClick={() => setSelectedIncident(null)}
-                className="text-gray-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-4">
-              <IncidentCard
-                incident={selectedIncident}
-                userId={userId}
-              />
-            </div>
+          {/* Mobile Bottom Panel */}
+          <div className="lg:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent pt-12 pb-4 px-4">
+            {selectedIncident ? (
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h2 className="text-white font-bold text-lg">{selectedIncident.title}</h2>
+                    <p className="text-gray-400 text-sm mt-1">{selectedIncident.description.substring(0, 100)}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedIncident(null)}
+                    className="text-gray-400 text-xl"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                    selectedIncident.status === 'open'
+                      ? 'bg-red-900 text-red-200'
+                      : 'bg-gray-700 text-gray-200'
+                  }`}>
+                    {selectedIncident.status.toUpperCase()}
+                  </span>
+                  <span className="text-gray-400 text-xs py-1">{selectedIncident.upvotes} votes</span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <h2 className="text-white font-bold text-lg mb-1">AROUND YOU</h2>
+                <p className="text-gray-400 text-sm">
+                  {filteredIncidents.length} incident{filteredIncidents.length !== 1 ? 's' : ''} nearby
+                </p>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Detail Overlay Panel (Desktop) */}
+          {selectedIncident && (
+            <div className="hidden lg:block absolute bottom-4 right-4 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-lg max-h-96 overflow-y-auto z-10">
+              <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h2 className="font-bold text-white">Details</h2>
+                <button
+                  onClick={() => setSelectedIncident(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4">
+                <IncidentCard
+                  incident={selectedIncident}
+                  userId={userId}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

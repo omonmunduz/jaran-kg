@@ -12,6 +12,7 @@ interface IncidentMapViewProps {
   onMarkerClick?: (incident: Incident & { category: Category }) => void;
   center?: [number, number];
   zoom?: number;
+  showUserLocation?: boolean;
 }
 
 export function IncidentMapView({
@@ -19,11 +20,14 @@ export function IncidentMapView({
   onMarkerClick,
   center = [74.6, 42.8],
   zoom = 12,
+  showUserLocation = true,
 }: IncidentMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
   const popups = useRef<mapboxgl.Popup[]>([]);
+  const userMarker = useRef<mapboxgl.Marker | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   const getMarkerColor = (status: string) => {
     switch (status) {
@@ -51,13 +55,77 @@ export function IncidentMapView({
       zoom: zoom,
     });
 
+    // Get user location
+    if (showUserLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([longitude, latitude]);
+
+          // Center map on user location
+          if (map.current) {
+            map.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 14,
+              duration: 1500,
+            });
+          }
+        },
+        (error) => {
+          console.log('Geolocation error:', error);
+        }
+      );
+    }
+
     return () => {
       if (map.current) {
         map.current.remove();
       }
     };
-  }, [center, zoom]);
+  }, [center, zoom, showUserLocation]);
 
+  // User location marker with pulsing effect
+  useEffect(() => {
+    if (!map.current || !userLocation || !showUserLocation) return;
+
+    if (userMarker.current) {
+      userMarker.current.remove();
+    }
+
+    // Create pulsing dot element
+    const el = document.createElement('div');
+    el.style.width = '32px';
+    el.style.height = '32px';
+    el.style.borderRadius = '50%';
+    el.style.backgroundColor = '#3b82f6';
+    el.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.4)';
+    el.style.animation = 'pulse 2s infinite';
+    el.style.cursor = 'pointer';
+    el.className = 'user-location-marker';
+
+    // Add CSS animation
+    if (!document.getElementById('pulse-animation')) {
+      const style = document.createElement('style');
+      style.id = 'pulse-animation';
+      style.textContent = `
+        @keyframes pulse {
+          0%, 100% {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 0 0 12px rgba(59, 130, 246, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2), 0 0 0 16px rgba(59, 130, 246, 0.1);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    userMarker.current = new mapboxgl.Marker({ element: el })
+      .setLngLat(userLocation)
+      .addTo(map.current);
+  }, [userLocation, showUserLocation]);
+
+  // Incident markers
   useEffect(() => {
     if (!map.current) return;
 
