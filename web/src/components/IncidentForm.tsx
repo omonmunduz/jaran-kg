@@ -1,20 +1,30 @@
 'use client';
 
-import { FormEvent, useState, useRef } from 'react';
+import { FormEvent, useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Category } from '@civic-platform/shared';
 import { MapDropPin } from './MapDropPin';
 import { createIncident } from '@/lib/incidents';
 import { uploadIncidentMedia } from '@/lib/upload';
 import { getCategories } from '@/lib/incidents';
-import { useEffect } from 'react';
 
 interface IncidentFormProps {
-  userId: string;
+  userId: string | null;
   onSuccess?: () => void;
 }
 
 export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
+  // If no user ID, show error message
+  if (!userId) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <p className="text-red-800">Please log in to submit a report.</p>
+        <a href="/auth/login" className="inline-block mt-2 text-blue-500 hover:underline">
+          Go to login
+        </a>
+      </div>
+    );
+  }
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,13 +42,22 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize the form update handlers
+  const updateFormData = useCallback((newData: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...newData }));
+  }, []);
+
+  const handleLocationSelect = useCallback((lat: number, lng: number) => {
+    setLocation({ lat, lng });
+  }, []);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const cats = await getCategories();
         setCategories(cats);
         if (cats.length > 0) {
-          setFormData((prev) => ({ ...prev, category: cats[0].id }));
+          updateFormData({ category: cats[0].id });
         }
       } catch (err) {
         console.error('Failed to fetch categories:', err);
@@ -46,7 +65,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
     };
 
     fetchCategories();
-  }, []);
+  }, [updateFormData]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -61,9 +80,6 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
     reader.readAsDataURL(f);
   };
 
-  const handleLocationSelect = (lat: number, lng: number) => {
-    setLocation({ lat, lng });
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -89,7 +105,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         imageUrl = url;
       }
 
-      await createIncident({
+      const { data: newIncident, error: incidentError } = await createIncident({
         user_id: userId,
         category: formData.category,
         title: formData.title,
@@ -98,6 +114,10 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         lng: location.lng,
         image_url: imageUrl,
       });
+
+      if (incidentError) {
+        throw incidentError;
+      }
 
       onSuccess?.();
       router.push('/');
@@ -123,7 +143,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         <select
           value={formData.category}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, category: e.target.value }))
+            updateFormData({ category: e.target.value })
           }
           className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
           required
@@ -145,7 +165,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
           type="text"
           value={formData.title}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, title: e.target.value }))
+            updateFormData({ title: e.target.value })
           }
           placeholder="Brief description of the issue"
           className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
@@ -160,7 +180,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         <textarea
           value={formData.description}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, description: e.target.value }))
+            updateFormData({ description: e.target.value })
           }
           placeholder="Provide more details about the issue"
           rows={5}

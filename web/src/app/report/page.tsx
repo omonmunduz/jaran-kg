@@ -13,20 +13,40 @@ export default function ReportPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+          error: sessionError
+        } = await supabase.auth.getSession();
 
-      if (!session?.user.id) {
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          router.push('/auth/login');
+          setLoading(false);
+          return;
+        }
+
+        if (!session?.user) {
+          console.log('No user session, redirecting to login');
+          router.push('/auth/login');
+          setLoading(false);
+          return;
+        }
+
+        // Log the user data for debugging
+        console.log('User session:', session.user);
+
+        // Ensure user exists in users table
+        await ensureUserExists(session.user.id, session.user);
+
+        setUserId(session.user.id);
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Redirect to login on any error
         router.push('/auth/login');
-        return;
+        setLoading(false);
       }
-
-      // Ensure user exists in users table
-      await ensureUserExists(session.user.id, session.user.user_metadata?.username);
-
-      setUserId(session.user.id);
-      setLoading(false);
     };
 
     checkAuth();

@@ -1,32 +1,53 @@
 import { supabase } from './supabase';
 import type { Incident, Category } from '@civic-platform/shared';
 
-export async function ensureUserExists(userId: string, username?: string) {
+export async function ensureUserExists(userId: string, userMetadata?: any) {
   try {
     // Check if user exists in users table
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
       .eq('id', userId)
       .single();
 
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
+    }
+
     if (!existingUser) {
+      // Try to get username from user metadata
+      const username = userMetadata?.user_name ||
+                      userMetadata?.username ||
+                      userMetadata?.full_name ||
+                      userMetadata?.name ||
+                      `user_${userId.slice(0, 8)}`;
+
+      console.log('Creating user with metadata:', { userId, userMetadata, username });
+
       // Create user entry if it doesn't exist
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('users')
         .insert([
           {
             id: userId,
-            username: username || `user_${userId.slice(0, 8)}`,
+            username: username,
+            phone: '',  // Provide empty string for required phone field
+            created_at: new Date().toISOString(),
           },
         ]);
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error creating user:', error);
+      if (insertError) {
+        console.error('Error creating user:', insertError);
+        throw insertError;
       }
+
+      console.log('User created successfully:', userId, username);
+    } else {
+      console.log('User already exists:', userId);
     }
   } catch (err) {
     console.error('Error ensuring user exists:', err);
+    throw err;
   }
 }
 
@@ -68,7 +89,7 @@ export async function getIncidentById(id: string) {
   return data as unknown as Incident;
 }
 
-export async function createIncident(data: {
+export async function createIncident(incidentData: {
   user_id: string;
   category: string;
   title: string;
@@ -82,13 +103,13 @@ export async function createIncident(data: {
       .from('incidents')
       .insert([
         {
-          user_id: data.user_id,
-          category: data.category,
-          title: data.title,
-          description: data.description,
-          lat: data.lat,
-          lng: data.lng,
-          image_url: data.image_url,
+          user_id: incidentData.user_id,
+          category: incidentData.category,
+          title: incidentData.title,
+          description: incidentData.description,
+          lat: incidentData.lat,
+          lng: incidentData.lng,
+          image_url: incidentData.image_url,
           status: 'open',
           upvotes: 0,
         },
