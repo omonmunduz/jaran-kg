@@ -46,7 +46,7 @@ export function IncidentMapView({
     mapboxgl.accessToken = MAPBOX_TOKEN;
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style: 'mapbox://styles/mapbox/dark-v11',
       center: [center[0], center[1]],
       zoom: zoom,
     });
