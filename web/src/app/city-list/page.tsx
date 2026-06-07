@@ -9,7 +9,7 @@ export default function CityListPage() {
   const [incidents, setIncidents] = useState<(Incident & { category: Category })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -17,7 +17,7 @@ export default function CityListPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      setUserId(session?.user.id ?? null);
+      setUserId(session?.user.id);
     };
 
     checkAuth();

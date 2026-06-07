@@ -9,7 +9,16 @@ export default function Home() {
           Report and track civic issues in your community
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/map">
+            <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
+              <h2 className="text-xl font-semibold mb-2">Live Map</h2>
+              <p className="text-gray-600">
+                Discover civic issues reported across the city in real-time. View incident details and track their status.
+              </p>
+            </div>
+          </Link>
+
           <Link href="/report">
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
               <h2 className="text-xl font-semibold mb-2">Report an Issue</h2>
