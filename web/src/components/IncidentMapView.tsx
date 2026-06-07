@@ -79,14 +79,19 @@ export function IncidentMapView({
 
     return () => {
       if (map.current) {
-        map.current.remove();
+        try {
+          map.current.remove();
+        } catch (e) {
+          console.log('Map cleanup error:', e);
+        }
+        map.current = null;
       }
     };
-  }, [center, zoom, showUserLocation]);
+  }, []);
 
   // User location marker with pulsing effect
   useEffect(() => {
-    if (!map.current || !userLocation || !showUserLocation) return;
+    if (!map.current || !userLocation) return;
 
     if (userMarker.current) {
       userMarker.current.remove();
@@ -123,7 +128,7 @@ export function IncidentMapView({
     userMarker.current = new mapboxgl.Marker({ element: el })
       .setLngLat(userLocation)
       .addTo(map.current);
-  }, [userLocation, showUserLocation]);
+  }, [userLocation]);
 
   // Incident markers
   useEffect(() => {
