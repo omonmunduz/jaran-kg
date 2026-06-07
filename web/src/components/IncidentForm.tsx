@@ -17,9 +17,9 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
   // If no user ID, show error message
   if (!userId) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800">Please log in to submit a report.</p>
-        <a href="/auth/login" className="inline-block mt-2 text-blue-500 hover:underline">
+      <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-6 text-center">
+        <p className="text-red-400">Please log in to submit a report.</p>
+        <a href="/auth/login" className="inline-block mt-2 text-amber-500 hover:underline">
           Go to login
         </a>
       </div>
@@ -131,13 +131,13 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-red-800">
+        <div className="rounded-lg border border-red-500/50 bg-red-900/20 p-4 text-red-400">
           {error}
         </div>
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Category *
         </label>
         <select
@@ -145,7 +145,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
           onChange={(e) =>
             updateFormData({ category: e.target.value })
           }
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
           required
         >
           <option value="">Select a category</option>
@@ -162,15 +162,15 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
           Title *
         </label>
         <input
-          type="text"
-          value={formData.title}
-          onChange={(e) =>
-            updateFormData({ title: e.target.value })
-          }
-          placeholder="Brief description of the issue"
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
-          required
-        />
+            type="text"
+            value={formData.title}
+            onChange={(e) =>
+              updateFormData({ title: e.target.value })
+            }
+            placeholder="Brief description of the issue"
+            className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white placeholder:text-gray-400 focus:border-blue-500 focus:outline-none"
+            required
+          />
       </div>
 
       <div>
@@ -184,13 +184,13 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
           }
           placeholder="Provide more details about the issue"
           rows={5}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Photo/Video (optional)
         </label>
         <input
@@ -198,10 +198,10 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
           type="file"
           onChange={handleFileChange}
           accept="image/jpeg,image/png,image/webp,video/mp4"
-          className="block w-full text-sm text-gray-500"
+          className="block w-full text-sm text-gray-400"
         />
         {preview && (
-          <div className="mt-2 relative h-48 w-full bg-gray-200 rounded-lg overflow-hidden">
+          <div className="mt-2 relative h-48 w-full bg-gray-700 rounded-lg overflow-hidden">
             {file?.type.startsWith('image/') ? (
               <img
                 src={preview}
@@ -220,7 +220,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">
           Location * (click on map to select)
         </label>
         <MapDropPin onLocationSelect={handleLocationSelect} />
@@ -229,7 +229,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-blue-500 py-2 px-4 font-medium text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+        className="w-full rounded-lg bg-amber-500 py-2 px-4 font-medium text-gray-900 transition-colors hover:bg-amber-600 disabled:opacity-50"
       >
         {loading ? 'Submitting...' : 'Submit Report'}
       </button>

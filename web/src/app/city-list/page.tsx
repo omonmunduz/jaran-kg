@@ -91,13 +91,13 @@ export default function CityListPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-950">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             City Accountability
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-400 mb-6">
             Transparency and accountability matter. Below are high-priority civic
             issues that the community has voted on. These reports receive official
             attention when enough citizens confirm they've seen the same problem.
@@ -105,7 +105,7 @@ export default function CityListPage() {
         </div>
 
         {error && (
-          <div className="mb-8 rounded-lg border border-red-300 bg-red-50 p-4 text-red-800">
+          <div className="mb-8 rounded-lg border border-red-500/50 bg-red-900/20 p-4 text-red-400">
             {error}
           </div>
         )}
@@ -113,14 +113,14 @@ export default function CityListPage() {
         <IncidentList incidents={incidents} isLoading={loading} userId={userId} />
 
         {!loading && incidents.length === 0 && (
-          <div className="rounded-lg bg-white p-12 text-center">
-            <p className="text-gray-600 mb-4">
+          <div className="rounded-lg bg-gray-800 p-12 text-center border border-gray-700">
+            <p className="text-gray-400 mb-4">
               No high-priority issues reported yet. Community reports with 5+ votes
               appear here to drive municipal accountability.
             </p>
             <a
               href="/report"
-              className="inline-block rounded-lg bg-blue-500 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-600"
+              className="inline-block rounded-lg bg-amber-500 px-6 py-2 font-medium text-gray-900 transition-colors hover:bg-amber-600"
             >
               Report an Issue
             </a>

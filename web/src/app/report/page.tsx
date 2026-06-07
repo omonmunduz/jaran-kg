@@ -54,7 +54,7 @@ export default function ReportPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
         <div>Loading...</div>
       </main>
     );
@@ -65,19 +65,19 @@ export default function ReportPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-950">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             Report a Civic Issue
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-400">
             Help your community by reporting problems in your neighborhood.
             Share photos, describe the issue, and help officials prioritize solutions.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-8">
+        <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
           <IncidentForm userId={userId} />
         </div>
       </div>
