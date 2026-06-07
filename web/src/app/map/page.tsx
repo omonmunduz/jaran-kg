@@ -5,6 +5,7 @@ import type { Incident, Category } from '@civic-platform/shared';
 import { IncidentMapView } from '@/components/IncidentMapView';
 import { IncidentCard } from '@/components/IncidentCard';
 import { getIncidents } from '@/lib/incidents';
+import { subscribeToIncidents, fetchIncidentWithCategory } from '@/lib/subscriptions';
 import Image from 'next/image';
 
 export default function MapPage() {
@@ -44,6 +45,41 @@ export default function MapPage() {
     };
 
     fetchIncidents();
+  }, []);
+
+  // Subscribe to real-time incident updates
+  useEffect(() => {
+    const subscription = subscribeToIncidents(async (payload) => {
+      try {
+        // Get full incident data with category
+        const fullIncident = await fetchIncidentWithCategory(payload.new?.id || payload.old?.id);
+
+        if (payload.eventType === 'INSERT') {
+          // Add new incident if status is open
+          if (fullIncident.status === 'open') {
+            setIncidents((prev) => [fullIncident as Incident & { category: Category }, ...prev]);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          // Update existing incident or remove if no longer open
+          setIncidents((prev) => {
+            if (fullIncident.status === 'open') {
+              return prev.map((inc) => (inc.id === fullIncident.id ? (fullIncident as Incident & { category: Category }) : inc));
+            } else {
+              return prev.filter((inc) => inc.id !== fullIncident.id);
+            }
+          });
+        } else if (payload.eventType === 'DELETE') {
+          // Remove deleted incident
+          setIncidents((prev) => prev.filter((inc) => inc.id !== payload.old.id));
+        }
+      } catch (err) {
+        console.error('Error handling incident update:', err);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const filteredIncidents = incidents.filter(

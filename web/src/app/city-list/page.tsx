@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { Incident, Category } from '@civic-platform/shared';
 import { IncidentList } from '@/components/IncidentList';
 import { supabase } from '@/lib/supabase';
+import { subscribeToIncidents, fetchIncidentWithCategory } from '@/lib/subscriptions';
 
 export default function CityListPage() {
   const [incidents, setIncidents] = useState<(Incident & { category: Category })[]>([]);
@@ -53,6 +54,40 @@ export default function CityListPage() {
     };
 
     fetchIncidents();
+  }, []);
+
+  // Subscribe to real-time incident updates for accountability list
+  useEffect(() => {
+    const subscription = subscribeToIncidents(async (payload) => {
+      try {
+        const fullIncident = await fetchIncidentWithCategory(payload.new?.id || payload.old?.id);
+
+        if (payload.eventType === 'INSERT') {
+          // Add incident if it has 5+ upvotes and is open
+          if (fullIncident.status === 'open' && fullIncident.upvotes >= 5) {
+            setIncidents((prev) => [fullIncident as Incident & { category: Category }, ...prev]);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          // Update or remove based on upvotes and status
+          setIncidents((prev) => {
+            if (fullIncident.status === 'open' && fullIncident.upvotes >= 5) {
+              return prev.map((inc) => (inc.id === fullIncident.id ? (fullIncident as Incident & { category: Category }) : inc));
+            } else {
+              return prev.filter((inc) => inc.id !== fullIncident.id);
+            }
+          });
+        } else if (payload.eventType === 'DELETE') {
+          // Remove deleted incident
+          setIncidents((prev) => prev.filter((inc) => inc.id !== payload.old.id));
+        }
+      } catch (err) {
+        console.error('Error handling incident update:', err);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
