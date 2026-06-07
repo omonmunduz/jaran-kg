@@ -38,7 +38,7 @@ export default function SignupPage() {
       setLoading(true);
       setError(null);
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -48,14 +48,20 @@ export default function SignupPage() {
         },
       });
 
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        console.error('Signup error:', signUpError);
+        throw signUpError;
+      }
 
-      router.push('/report');
+      if (data?.user) {
+        router.push('/report');
+      }
     } catch (err) {
+      console.error('Full error:', err);
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to create account'
+          : 'Failed to create account. Please check your connection and try again.'
       );
     } finally {
       setLoading(false);

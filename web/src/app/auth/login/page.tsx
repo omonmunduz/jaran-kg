@@ -26,19 +26,25 @@ export default function LoginPage() {
       setLoading(true);
       setError(null);
 
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Login error:', authError);
+        throw authError;
+      }
 
-      router.push('/report');
+      if (data?.user) {
+        router.push('/report');
+      }
     } catch (err) {
+      console.error('Full error:', err);
       setError(
         err instanceof Error
           ? err.message
-          : 'Failed to sign in'
+          : 'Failed to sign in. Please check your connection and try again.'
       );
     } finally {
       setLoading(false);
