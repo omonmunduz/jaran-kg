@@ -29,6 +29,18 @@ export function IncidentMapView({
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
+  const getMarkerEmoji = (category: { icon: string }) => {
+    const emojiMap: Record<string, string> = {
+      'traffic': '🚗', // car crash / traffic issues
+      'utilities': '🚰', // water / utilities
+      'environment': '🌳', // environmental issues
+      'security': '🚨', // security / police
+      'education': '🎓', // education
+      'health': '🏥', // health / medical
+    };
+    return emojiMap[category.icon] || '📍';
+  };
+
   const getMarkerColor = (status: string) => {
     switch (status) {
       case 'open':
@@ -144,18 +156,48 @@ export function IncidentMapView({
     incidents.forEach((incident) => {
       const el = document.createElement('div');
       el.className = 'marker';
-      el.style.width = '32px';
-      el.style.height = '32px';
-      el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${encodeURIComponent(getMarkerColor(incident.status))}"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>')`;
-      el.style.backgroundSize = '100%';
+      el.style.width = '40px';
+      el.style.height = '40px';
+      el.style.fontSize = '24px';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.borderRadius = '50%';
+      el.style.border = '2px solid white';
+      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      el.style.backgroundColor = getMarkerColor(incident.status);
       el.style.cursor = 'pointer';
+      el.style.transition = 'transform 0.2s ease';
+      el.innerHTML = getMarkerEmoji(incident.category);
+
+      // Add hover effect
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.2)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+      });
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([incident.lng, incident.lat])
         .addTo(map.current!);
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+      const popup = new mapboxgl.Popup({ offset: 35 }).setHTML(
         `<div class="p-3 w-48">
+          <div class="flex items-center mb-1">
+            <span class="text-xl mr-2">${getMarkerEmoji(incident.category)}</span>
+            <span class="text-xs font-medium px-2 py-1 rounded ${
+              incident.status === 'open'
+                ? 'bg-red-100 text-red-800'
+                : incident.status === 'investigating'
+                ? 'bg-yellow-100 text-yellow-800'
+                : incident.status === 'resolved'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+            }">
+              ${incident.category.name_ru}
+            </span>
+          </div>
           <h3 class="font-bold text-sm mb-1">${incident.title}</h3>
           <p class="text-xs text-gray-600 mb-2">${incident.description.substring(0, 100)}...</p>
           <span class="text-xs font-medium px-2 py-1 rounded ${

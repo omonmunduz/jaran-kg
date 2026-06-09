@@ -4,6 +4,7 @@ import { FormEvent, useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Category } from '@civic-platform/shared';
 import { MapDropPin } from './MapDropPin';
+import { supabase } from '@/lib/supabase';
 import { createIncident } from '@/lib/incidents';
 import { uploadIncidentMedia } from '@/lib/upload';
 import { getCategories } from '@/lib/incidents';
@@ -105,15 +106,23 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         imageUrl = url;
       }
 
-      const { data: newIncident, error: incidentError } = await createIncident({
-        user_id: userId,
-        category: formData.category,
-        title: formData.title,
-        description: formData.description,
-        lat: location.lat,
-        lng: location.lng,
-        image_url: imageUrl,
-      });
+      const { data: newIncident, error: incidentError } = await supabase
+        .from('incidents')
+        .insert([
+          {
+            user_id: userId,
+            category: formData.category,
+            title: formData.title,
+            description: formData.description,
+            lat: location.lat,
+            lng: location.lng,
+            image_url: imageUrl,
+            status: 'open',
+            upvotes: 0,
+          },
+        ])
+        .select()
+        .single();
 
       if (incidentError) {
         throw incidentError;

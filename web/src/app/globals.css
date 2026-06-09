@@ -19,3 +19,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Map marker styles */
+.mapboxgl-popup-content {
+  border-radius: 8px;
+}
+
+.mapboxgl-marker:hover {
+  cursor: pointer;
+}
