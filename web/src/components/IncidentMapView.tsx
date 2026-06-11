@@ -15,6 +15,29 @@ interface IncidentMapViewProps {
   showUserLocation?: boolean;
 }
 
+const getCategoryEmoji = (icon: string): string => {
+  const emojiMap: Record<string, string> = {
+    health:        '🏥',
+    road:          '🛣️',
+    security:       '🚨',
+    lighting:      '💡',
+    garbage:       '🗑️',
+    utilities:         '💧',
+    education:   '💡',
+    safety:        '🚨',
+    vandalism:     '🏚️',
+    noise:         '📢',
+    environment:   '🌳',
+    traffic:     '🚗',
+    construction:  '🚧',
+    animal:        '🐾',
+    fire:          '🔥',
+    flood:         '🌊',
+    other:         '📍',
+  };
+  return emojiMap[icon?.toLowerCase()] ?? '📍';
+};
+
 export function IncidentMapView({
   incidents,
   onMarkerClick,
@@ -28,21 +51,6 @@ export function IncidentMapView({
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
-  const getMarkerColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return '#ef4444'; // red
-      case 'investigating':
-        return '#eab308'; // yellow
-      case 'resolved':
-        return '#22c55e'; // green
-      case 'closed':
-        return '#6b7280'; // gray
-      default:
-        return '#3b82f6'; // blue
-    }
-  };
-
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -54,14 +62,12 @@ export function IncidentMapView({
       zoom: zoom,
     });
 
-    // Get user location
     if (showUserLocation && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation([longitude, latitude]);
 
-          // Center map on user location
           if (map.current) {
             map.current.flyTo({
               center: [longitude, latitude],
@@ -96,7 +102,6 @@ export function IncidentMapView({
       userMarker.current.remove();
     }
 
-    // Create pulsing dot element
     const el = document.createElement('div');
     el.style.width = '32px';
     el.style.height = '32px';
@@ -107,7 +112,6 @@ export function IncidentMapView({
     el.style.cursor = 'pointer';
     el.className = 'user-location-marker';
 
-    // Add CSS animation
     if (!document.getElementById('pulse-animation')) {
       const style = document.createElement('style');
       style.id = 'pulse-animation';
@@ -133,31 +137,31 @@ export function IncidentMapView({
   useEffect(() => {
     if (!map.current) return;
 
-    // Remove existing markers and popups
     markers.current.forEach((marker) => marker.remove());
     markers.current = [];
 
-    // Create new markers for incidents
     incidents.forEach((incident) => {
       const el = document.createElement('div');
       el.className = 'marker';
-      el.style.width = '32px';
-      el.style.height = '32px';
-      el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${encodeURIComponent(getMarkerColor(incident.status))}"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>')`;
-      el.style.backgroundSize = '100%';
+      el.style.fontSize = '28px';
+      el.style.lineHeight = '1';
       el.style.cursor = 'pointer';
+      el.style.userSelect = 'none';
+      el.style.filter =
+        incident.status === 'resolved' || incident.status === 'closed'
+          ? 'grayscale(1) opacity(0.5)'
+          : 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))';
+      el.textContent = getCategoryEmoji(incident.category.icon);
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([incident.lng, incident.lat])
         .addTo(map.current!);
 
-   
       marker.getElement().addEventListener('click', () => {
         onMarkerClick?.(incident);
       });
 
       markers.current.push(marker);
-      //popups.current.push(popup);
     });
   }, [incidents, onMarkerClick]);
 
