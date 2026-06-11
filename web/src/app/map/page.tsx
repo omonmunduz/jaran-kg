@@ -200,6 +200,16 @@ export default function MapPage() {
           <div className="lg:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent pt-12 pb-4 px-4">
             {selectedIncident ? (
               <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                    {/* ✅ ADD THIS IMAGE BLOCK */}
+            {selectedIncident.image_url && (
+              <div className="mb-3 h-40 bg-gray-700 rounded overflow-hidden">
+                <img
+                  src={selectedIncident.image_url}
+                  alt={selectedIncident.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
                     <h2 className="text-white font-bold text-lg">{selectedIncident.title}</h2>
