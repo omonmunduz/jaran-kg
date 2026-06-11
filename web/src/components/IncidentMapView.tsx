@@ -25,7 +25,6 @@ export function IncidentMapView({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
-  const popups = useRef<mapboxgl.Popup[]>([]);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
@@ -136,9 +135,7 @@ export function IncidentMapView({
 
     // Remove existing markers and popups
     markers.current.forEach((marker) => marker.remove());
-    popups.current.forEach((popup) => popup.remove());
     markers.current = [];
-    popups.current = [];
 
     // Create new markers for incidents
     incidents.forEach((incident) => {
@@ -154,31 +151,13 @@ export function IncidentMapView({
         .setLngLat([incident.lng, incident.lat])
         .addTo(map.current!);
 
-      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-        `<div class="p-3 w-48">
-          <h3 class="font-bold text-sm mb-1">${incident.title}</h3>
-          <p class="text-xs text-gray-600 mb-2">${incident.description.substring(0, 100)}...</p>
-          <span class="text-xs font-medium px-2 py-1 rounded ${
-            incident.status === 'open'
-              ? 'bg-red-100 text-red-800'
-              : incident.status === 'investigating'
-              ? 'bg-yellow-100 text-yellow-800'
-              : incident.status === 'resolved'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-          }">
-            ${incident.status.toUpperCase()}
-          </span>
-        </div>`
-      );
-
-      marker.setPopup(popup);
+   
       marker.getElement().addEventListener('click', () => {
         onMarkerClick?.(incident);
       });
 
       markers.current.push(marker);
-      popups.current.push(popup);
+      //popups.current.push(popup);
     });
   }, [incidents, onMarkerClick]);
 
