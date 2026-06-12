@@ -89,6 +89,7 @@ export default function CityListPage() {
       subscription.unsubscribe();
     };
   }, []);
+  console.log('Accountability List Incidents:', incidents);
 
   return (
     <main className="min-h-screen bg-gray-950">
