@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import type { Incident, Category } from '@civic-platform/shared';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -17,24 +17,25 @@ interface IncidentMapViewProps {
 
 const getCategoryEmoji = (icon: string): string => {
   const emojiMap: Record<string, string> = {
-    health:        '🏥',
-    road:          '🛣️',
-    security:       '🚨',
-    lighting:      '💡',
-    garbage:       '🗑️',
-    utilities:         '💧',
-    education:   '💡',
-    safety:        '🚨',
-    vandalism:     '🏚️',
-    noise:         '📢',
-    environment:   '🌳',
-    traffic:     '🚗',
-    construction:  '🚧',
-    animal:        '🐾',
-    fire:          '🔥',
-    flood:         '🌊',
-    other:         '📍',
+    health: '🏥',
+    road: '🛣️',
+    security: '🚨',
+    lighting: '💡',
+    garbage: '🗑️',
+    utilities: '💧',
+    education: '💡',
+    safety: '🚨',
+    vandalism: '🏚️',
+    noise: '📢',
+    environment: '🌳',
+    traffic: '🚗',
+    construction: '🚧',
+    animal: '🐾',
+    fire: '🔥',
+    flood: '🌊',
+    other: '📍',
   };
+
   return emojiMap[icon?.toLowerCase()] ?? '📍';
 };
 
@@ -47,126 +48,170 @@ export function IncidentMapView({
 }: IncidentMapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<mapboxgl.Marker[]>([]);
+  const incidentMarkers = useRef<mapboxgl.Marker[]>([]);
   const userMarker = useRef<mapboxgl.Marker | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [locationStatus, setLocationStatus] =
+    useState<'idle' | 'loading' | 'error' | 'success'>('idle');
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // -----------------------
+  // INIT MAP
+  // -----------------------
   useEffect(() => {
     if (!mapContainer.current) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
-    map.current = new mapboxgl.Map({
+
+    const mapInstance = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/dark-v11',
-      center: [center[0], center[1]],
-      zoom: zoom,
+      center,
+      zoom,
     });
 
-    if (showUserLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([longitude, latitude]);
+    map.current = mapInstance;
 
-          if (map.current) {
-            map.current.flyTo({
-              center: [longitude, latitude],
-              zoom: 14,
-              duration: 1500,
-            });
-          }
-        },
-        (error) => {
-          console.log('Geolocation error:', error);
-        }
-      );
-    }
+    mapInstance.on('load', () => {
+      setMapLoaded(true);
+    });
 
     return () => {
-      if (map.current) {
-        try {
-          map.current.remove();
-        } catch (e) {
-          console.log('Map cleanup error:', e);
-        }
-        map.current = null;
-      }
+      mapInstance.remove();
+      map.current = null;
     };
   }, []);
 
-  // User location marker with pulsing effect
-  useEffect(() => {
-    if (!map.current || !userLocation) return;
+  // -----------------------
+  // GEOLOCATION (AUTO)
+  // -----------------------
+  const getUserLocation = useCallback(() => {
+    if (!navigator.geolocation) return;
 
-    if (userMarker.current) {
-      userMarker.current.remove();
-    }
+    setLocationStatus('loading');
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: [number, number] = [
+          pos.coords.longitude,
+          pos.coords.latitude,
+        ];
+
+        setUserLocation(coords);
+        setLocationStatus('success');
+
+        map.current?.flyTo({
+          center: coords,
+          zoom: 14,
+          duration: 1500,
+        });
+      },
+      (err) => {
+        setLocationStatus('error');
+        setLocationError(err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
+  }, []);
+
+  // AUTO TRIGGER LOCATION ON MAP LOAD
+  useEffect(() => {
+    if (!mapLoaded || !showUserLocation) return;
+
+    getUserLocation();
+  }, [mapLoaded, showUserLocation, getUserLocation]);
+
+  // -----------------------
+  // USER MARKER
+  // -----------------------
+  useEffect(() => {
+    if (!map.current || !mapLoaded || !userLocation) return;
+
+    const [lng, lat] = userLocation;
+
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+
+    userMarker.current?.remove();
 
     const el = document.createElement('div');
-    el.style.width = '32px';
-    el.style.height = '32px';
+    el.style.width = '40px';
+    el.style.height = '40px';
     el.style.borderRadius = '50%';
     el.style.backgroundColor = '#3b82f6';
-    el.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.4)';
-    el.style.animation = 'pulse 2s infinite';
+    el.style.border = '3px solid white';
+    el.style.boxShadow =
+      '0 0 0 4px rgba(59,130,246,0.4), 0 0 0 10px rgba(59,130,246,0.2)';
     el.style.cursor = 'pointer';
-    el.className = 'user-location-marker';
-
-    if (!document.getElementById('pulse-animation')) {
-      const style = document.createElement('style');
-      style.id = 'pulse-animation';
-      style.textContent = `
-        @keyframes pulse {
-          0%, 100% {
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.4), 0 0 0 12px rgba(59, 130, 246, 0.2);
-          }
-          50% {
-            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2), 0 0 0 16px rgba(59, 130, 246, 0.1);
-          }
-        }
-      `;
-      document.head.appendChild(style);
-    }
 
     userMarker.current = new mapboxgl.Marker({ element: el })
-      .setLngLat(userLocation)
+      .setLngLat([lng, lat])
       .addTo(map.current);
-  }, [userLocation]);
+  }, [userLocation, mapLoaded]);
 
-  // Incident markers
+  // -----------------------
+  // INCIDENT MARKERS
+  // -----------------------
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !mapLoaded) return;
 
-    markers.current.forEach((marker) => marker.remove());
-    markers.current = [];
+    incidentMarkers.current.forEach((m) => m.remove());
+    incidentMarkers.current = [];
 
     incidents.forEach((incident) => {
       const el = document.createElement('div');
-      el.className = 'marker';
-      el.style.fontSize = '28px';
-      el.style.lineHeight = '1';
+      el.style.fontSize = '26px';
       el.style.cursor = 'pointer';
-      el.style.userSelect = 'none';
-      el.style.filter =
-        incident.status === 'resolved' || incident.status === 'closed'
-          ? 'grayscale(1) opacity(0.5)'
-          : 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))';
       el.textContent = getCategoryEmoji(incident.category.icon);
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([incident.lng, incident.lat])
         .addTo(map.current!);
 
-      marker.getElement().addEventListener('click', () => {
+      el.addEventListener('click', () => {
         onMarkerClick?.(incident);
       });
 
-      markers.current.push(marker);
+      incidentMarkers.current.push(marker);
     });
-  }, [incidents, onMarkerClick]);
+  }, [incidents, mapLoaded, onMarkerClick]);
 
+  // -----------------------
+  // UI
+  // -----------------------
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
+      {/* Optional control panel (kept as fallback/debug) */}
+      {showUserLocation && (
+        <div className="absolute top-4 right-4 z-50 bg-white p-3 rounded-lg shadow-md flex flex-col gap-2 w-[220px]">
+          <button
+            onClick={getUserLocation}
+            disabled={locationStatus === 'loading'}
+            className="bg-blue-600 text-white px-3 py-2 rounded-md text-sm disabled:opacity-50"
+          >
+            {locationStatus === 'loading'
+              ? 'Getting location...'
+              : '📍 Refresh Location'}
+          </button>
+
+          {locationStatus === 'error' && (
+            <div className="text-xs text-red-600">{locationError}</div>
+          )}
+
+          {locationStatus === 'success' && userLocation && (
+            <div className="text-xs text-green-600">
+              {userLocation[0].toFixed(5)}, {userLocation[1].toFixed(5)}
+            </div>
+          )}
+        </div>
+      )}
+
       <div ref={mapContainer} className="w-full h-full rounded-lg" />
     </div>
   );
