@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { Incident, Category } from '@civic-platform/shared';
@@ -10,6 +11,7 @@ interface IncidentCardProps {
   incident: Incident & { category: Category };
   userId?: string;
   onVoteChange?: () => void;
+  clickable?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -26,10 +28,16 @@ const statusLabels: Record<string, string> = {
   closed: 'Closed',
 };
 
+// Mock view count - in a real app, this would come from the database
+const getViewCount = () => {
+  return Math.floor(Math.random() * 100) + 1;
+};
+
 export function IncidentCard({
   incident,
   userId,
   onVoteChange,
+  clickable = true,
 }: IncidentCardProps) {
   const router = useRouter();
   const { hasVoted, voteCount, toggleUserVote, loading } = useIncidentVote(
@@ -51,8 +59,8 @@ export function IncidentCard({
     addSuffix: true,
   });
 
-  return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-shadow hover:shadow-lg">
+  const CardContent = (
+    <div className={`overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-shadow hover:shadow-lg ${clickable ? 'cursor-pointer' : ''}`}>
       {incident.image_url && (
         <div className="relative h-48 w-full bg-gray-200">
           <Image
@@ -95,20 +103,35 @@ export function IncidentCard({
 
         <div className="text-xs text-gray-500 mb-4">{daysAgo}</div>
 
-        <button
-          onClick={handleVote}
-          disabled={loading}
-          className={`w-full rounded py-2 px-3 font-medium transition-colors ${
-            hasVoted
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50'
-          }`}
-        >
-          {loading
-            ? '...'
-            : `👍 I've seen this too (${voteCount})`}
-        </button>
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={handleVote}
+            disabled={loading}
+            className={`flex-1 rounded py-2 px-3 font-medium transition-colors ${
+              hasVoted
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50'
+            }`}
+          >
+            {loading
+              ? '...'
+              : `👍 I've seen this too (${voteCount})`}
+          </button>
+          <span className="text-gray-500 text-xs ml-2">
+            👁️ {getViewCount()}
+          </span>
+        </div>
       </div>
+    </div>
+  );
+
+  return clickable ? (
+    <Link href={`/incident/${incident.id}`}>
+      {CardContent}
+    </Link>
+  ) : (
+    <div className="pointer-events-none">
+      {CardContent}
     </div>
   );
 }

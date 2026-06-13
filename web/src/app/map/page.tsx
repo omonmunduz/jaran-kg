@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Incident, Category } from '@civic-platform/shared';
 import { IncidentMapView } from '@/components/IncidentMapView';
 import { IncidentCard } from '@/components/IncidentCard';
@@ -199,40 +200,44 @@ export default function MapPage() {
           {/* Mobile Bottom Panel */}
           <div className="lg:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent pt-12 pb-4 px-4">
             {selectedIncident ? (
-              <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                    {/* ✅ ADD THIS IMAGE BLOCK */}
-            {selectedIncident.image_url && (
-              <div className="mb-3 h-40 bg-gray-700 rounded overflow-hidden">
-                <img
-                  src={selectedIncident.image_url}
-                  alt={selectedIncident.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h2 className="text-white font-bold text-lg">{selectedIncident.title}</h2>
-                    <p className="text-gray-400 text-sm mt-1">{selectedIncident.description.substring(0, 100)}</p>
+              <Link href={`/incident/${selectedIncident.id}`}>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer">
+                  {selectedIncident.image_url && (
+                    <div className="mb-3 h-40 bg-gray-700 rounded overflow-hidden">
+                      <img
+                        src={selectedIncident.image_url}
+                        alt={selectedIncident.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h2 className="text-white font-bold text-lg">{selectedIncident.title}</h2>
+                      <p className="text-gray-400 text-sm mt-1">{selectedIncident.description.substring(0, 100)}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedIncident(null);
+                      }}
+                      className="text-gray-400 text-xl"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setSelectedIncident(null)}
-                    className="text-gray-400 text-xl"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex gap-2">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                      selectedIncident.status === 'open'
+                        ? 'bg-red-900 text-red-200'
+                        : 'bg-gray-700 text-gray-200'
+                    }`}>
+                      {selectedIncident.status.toUpperCase()}
+                    </span>
+                    <span className="text-gray-400 text-xs py-1">{selectedIncident.upvotes} votes</span>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                    selectedIncident.status === 'open'
-                      ? 'bg-red-900 text-red-200'
-                      : 'bg-gray-700 text-gray-200'
-                  }`}>
-                    {selectedIncident.status.toUpperCase()}
-                  </span>
-                  <span className="text-gray-400 text-xs py-1">{selectedIncident.upvotes} votes</span>
-                </div>
-              </div>
+              </Link>
             ) : (
               <div className="text-center">
                 <h2 className="text-white font-bold text-lg mb-1">AROUND YOU</h2>
@@ -245,23 +250,29 @@ export default function MapPage() {
 
           {/* Detail Overlay Panel (Desktop) */}
           {selectedIncident && (
-            <div className="hidden lg:block absolute bottom-4 right-4 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-lg max-h-96 overflow-y-auto z-10">
-              <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                <h2 className="font-bold text-white">Details</h2>
-                <button
-                  onClick={() => setSelectedIncident(null)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  ✕
-                </button>
+            <Link href={`/incident/${selectedIncident.id}`}>
+              <div className="hidden lg:block absolute bottom-4 right-4 w-80 bg-gray-900 border border-gray-800 rounded-lg shadow-lg max-h-96 overflow-y-auto z-10 cursor-pointer">
+                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                  <h2 className="font-bold text-white">Details</h2>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedIncident(null);
+                    }}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="p-4">
+                  <IncidentCard
+                    incident={selectedIncident}
+                    userId={userId}
+                    clickable={false}
+                  />
+                </div>
               </div>
-              <div className="p-4">
-                <IncidentCard
-                  incident={selectedIncident}
-                  userId={userId}
-                />
-              </div>
-            </div>
+            </Link>
           )}
         </div>
       </div>
