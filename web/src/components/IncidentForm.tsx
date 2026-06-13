@@ -105,7 +105,7 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         imageUrl = url;
       }
 
-      const { data: newIncident, error: incidentError } = await createIncident({
+      await createIncident({
         user_id: userId,
         category: formData.category,
         title: formData.title,
@@ -114,10 +114,6 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
         lng: location.lng,
         image_url: imageUrl,
       });
-
-      if (incidentError) {
-        throw incidentError;
-      }
 
       onSuccess?.();
       router.push('/');

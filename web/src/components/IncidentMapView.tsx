@@ -105,7 +105,7 @@ export function IncidentMapView({
 
         map.current?.flyTo({
           center: coords,
-          zoom: 14,
+          zoom: 15,
           duration: 1500,
         });
       },

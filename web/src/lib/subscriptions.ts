@@ -54,3 +54,24 @@ export function subscribeToIncidentVotes(
 
   return subscription;
 }
+
+export function subscribeToComments(
+  incidentId: string,
+  callback: (payload: any) => void
+) {
+  const subscription = supabase
+    .channel(`comments-${incidentId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'comments',
+        filter: `incident_id=eq.${incidentId}`,
+      },
+      (payload) => callback(payload)
+    )
+    .subscribe();
+
+  return subscription;
+}
