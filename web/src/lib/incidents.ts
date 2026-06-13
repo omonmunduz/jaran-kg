@@ -166,12 +166,4 @@ export async function getCategories() {
   return data as unknown as Category[];
 }
 
-export async function getIncidentVoteCount(incidentId: string) {
-  const { data, error } = await supabase
-    .from('incident_votes')
-    .select('*', { count: 'exact' })
-    .eq('incident_id', incidentId);
-
-  if (error) throw error;
-  return data?.length ?? 0;
-}
+// Vote count is now handled directly through incidents.upvotes

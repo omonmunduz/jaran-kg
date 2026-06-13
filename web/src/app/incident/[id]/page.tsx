@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CommentSection } from '@/components/CommentSection';
 import { CommentInput } from '@/components/CommentInput';
 import { useIncidentVote } from '@/hooks/useIncidentVote';
+import { cn } from '@/lib/utils';
 import { getIncidentById } from '@/lib/incidents';
 import { supabase } from '@/lib/supabase';
 import type { Incident, Category } from '@civic-platform/shared';
@@ -40,7 +41,7 @@ export default function IncidentDetailPage() {
     getSession();
   }, []);
 
-  const { hasVoted, voteCount, toggleUserVote, loading: voteLoading } = useIncidentVote(
+  const { hasVoted, voteCount, handleVote, loading: voteLoading } = useIncidentVote(
     incident?.id || '',
     session?.user?.id
   );
@@ -197,10 +198,41 @@ export default function IncidentDetailPage() {
             {incident.title}
           </h1>
 
-          <div className="flex items-center gap-4 text-sm text-gray-400">
+          <div className="flex items-center gap-6 text-sm text-gray-400">
             <span>📍 {incident.lat.toFixed(4)}, {incident.lng.toFixed(4)}</span>
             <span>📅 {formatDistanceToNow(new Date(incident.created_at), { addSuffix: true })}</span>
-            <span>👍 {voteCount} votes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleVote}
+              disabled={voteLoading || hasVoted}
+              className={cn(
+                "flex items-center gap-2 transition-all duration-200 hover:scale-105",
+                hasVoted
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-400 cursor-not-allowed'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              )}
+              title={hasVoted ? "You already voted for this incident" : "Click to upvote"}
+            >
+              <span className={cn(
+                "transition-transform duration-200",
+                hasVoted ? 'text-xl' : 'hover:scale-110'
+              )}>
+                👍
+              </span>
+              <span className={cn(
+                "font-medium",
+                hasVoted && "text-black"
+              )}>
+                {hasVoted ? 'Voted' : `${voteCount} ${voteCount === 1 ? 'vote' : 'votes'}`}
+              </span>
+              {voteLoading && (
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+            </Button>
           </div>
         </div>
       </div>

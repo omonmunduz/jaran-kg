@@ -113,33 +113,7 @@ CREATE POLICY "Users can delete their own comments"
   ON comments FOR DELETE
   USING (auth.uid() = user_id);
 
--- Create incident_votes table for upvoting system
-CREATE TABLE IF NOT EXISTS incident_votes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  incident_id UUID NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT now(),
-  UNIQUE(incident_id, user_id)
-);
-
-CREATE INDEX idx_incident_votes_incident_id ON incident_votes(incident_id);
-CREATE INDEX idx_incident_votes_user_id ON incident_votes(user_id);
-
--- Enable RLS for incident_votes
-ALTER TABLE incident_votes ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for incident_votes
-CREATE POLICY "Anyone can view votes"
-  ON incident_votes FOR SELECT
-  USING (true);
-
-CREATE POLICY "Authenticated users can create votes"
-  ON incident_votes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own votes"
-  ON incident_votes FOR DELETE
-  USING (auth.uid() = user_id);
+-- Voting is handled directly through the incidents.upvotes column
 
 -- SQL Function for incident clustering (simplified - groups within bounds)
 -- For production, enable PostGIS and use ST_Distance_Sphere for accurate distance
@@ -191,25 +165,7 @@ GROUP BY cluster_id
 HAVING COUNT(*) >= 3;
 $$ LANGUAGE SQL STABLE;
 
--- Trigger to update incidents.upvotes when votes are added/removed
-CREATE OR REPLACE FUNCTION update_incident_upvotes()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF TG_OP = 'INSERT' THEN
-    UPDATE incidents SET upvotes = upvotes + 1 WHERE id = NEW.incident_id;
-    RETURN NEW;
-  ELSIF TG_OP = 'DELETE' THEN
-    UPDATE incidents SET upvotes = upvotes - 1 WHERE id = OLD.incident_id;
-    RETURN OLD;
-  END IF;
-  RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER incident_votes_update_trigger
-AFTER INSERT OR DELETE ON incident_votes
-FOR EACH ROW
-EXECUTE FUNCTION update_incident_upvotes();
+-- Voting updates are handled directly through the incidents.upvotes column
 
 -- Insert default categories
 INSERT INTO categories (name_ru, name_ky, icon, color) VALUES

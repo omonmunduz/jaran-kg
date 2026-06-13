@@ -40,18 +40,13 @@ export function IncidentCard({
   clickable = true,
 }: IncidentCardProps) {
   const router = useRouter();
-  const { hasVoted, voteCount, toggleUserVote, loading } = useIncidentVote(
+  const { hasVoted, voteCount, handleVote: handleVoteAction, loading } = useIncidentVote(
     incident.id,
     userId
   );
 
   const handleVote = async () => {
-    if (!userId) {
-      router.push('/auth/login');
-      return;
-    }
-
-    await toggleUserVote();
+    await handleVoteAction();
     onVoteChange?.();
   };
 
