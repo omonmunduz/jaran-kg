@@ -55,12 +55,14 @@ export function IncidentForm({ userId, onSuccess }: IncidentFormProps) {
     const fetchCategories = async () => {
       try {
         const cats = await getCategories();
+        console.log('Fetched categories:', cats);
         setCategories(cats);
         if (cats.length > 0) {
           updateFormData({ category: cats[0].id });
         }
       } catch (err) {
         console.error('Failed to fetch categories:', err);
+        setError('Failed to load categories. Please try again.');
       }
     };
 

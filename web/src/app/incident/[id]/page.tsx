@@ -11,6 +11,7 @@ import { useIncidentVote } from '@/hooks/useIncidentVote';
 import { cn } from '@/lib/utils';
 import { getIncidentById } from '@/lib/incidents';
 import { supabase } from '@/lib/supabase';
+import ModeratorControls from '@/components/ModeratorControls';
 import type { Incident, Category } from '@civic-platform/shared';
 
 // Timeline entry interface
@@ -32,6 +33,7 @@ export default function IncidentDetailPage() {
   const router = useRouter();
   const params = useParams();
   const [session, setSession] = useState<any>(null);
+  const [dbTimeline, setDbTimeline] = useState<any[]>([]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -40,6 +42,18 @@ export default function IncidentDetailPage() {
     };
     getSession();
   }, []);
+
+  // Function to handle status updates
+  const handleStatusUpdate = (newStatus: string) => {
+    if (incident) {
+      setIncident(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
+  // Function to add timeline entry (for when ModeratorControls adds one)
+  const addTimelineEntry = (entry: any) => {
+    setTimeline(prev => [entry, ...prev]);
+  };
 
   const { hasVoted, voteCount, handleVote, loading: voteLoading } = useIncidentVote(
     incident?.id || '',
@@ -62,37 +76,51 @@ export default function IncidentDetailPage() {
         const data = await getIncidentById(id);
         setIncident(data as Incident & { category: Category });
 
-        // Generate mock timeline data
-        const mockTimeline: TimelineEntry[] = [
-          {
-            id: '1',
-            text: 'Incident reported by community member',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            hasAudio: false,
-          },
-          {
-            id: '2',
-            text: 'City authorities have been notified',
-            timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            hasAudio: true,
-            audioUrl: '#', // Placeholder
-            transcription: 'The issue has been logged in our system. We are working to resolve it within 24 hours.',
-          },
-          {
-            id: '3',
-            text: 'Assessment team dispatched to location',
-            timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-            hasAudio: false,
-          },
-        ];
-        setTimeline(mockTimeline);
+        // Fetch timeline entries from database
+        const { data: timelineData, error: timelineError } = await supabase
+          .from('timeline_entries')
+          .select('*')
+          .eq('incident_id', id)
+          .order('created_at', { ascending: false });
 
-        // In a real app, you would fetch this from the database:
-        // const { data: timelineData } = await supabase
-        //   .from('timeline_entries')
-        //   .select('*')
-        //   .eq('incident_id', id)
-        //   .order('created_at', { ascending: false });
+        if (timelineError) {
+          console.error('Error fetching timeline:', timelineError);
+          // Fallback to mock data
+          const mockTimeline: TimelineEntry[] = [
+            {
+              id: '1',
+              text: 'Incident reported by community member',
+              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+              hasAudio: false,
+            },
+            {
+              id: '2',
+              text: 'City authorities have been notified',
+              timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+              hasAudio: true,
+              audioUrl: '#', // Placeholder
+              transcription: 'The issue has been logged in our system. We are working to resolve it within 24 hours.',
+            },
+            {
+              id: '3',
+              text: 'Assessment team dispatched to location',
+              timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+              hasAudio: false,
+            },
+          ];
+          setTimeline(mockTimeline);
+          setDbTimeline([]);
+        } else {
+          // Convert timeline entries to our format
+          const formattedTimeline: TimelineEntry[] = timelineData.map(entry => ({
+            id: entry.id,
+            text: entry.text,
+            timestamp: entry.created_at,
+            hasAudio: false,
+          }));
+          setTimeline(formattedTimeline);
+          setDbTimeline(timelineData);
+        }
       } catch (err) {
         console.error('Error fetching incident:', err);
         setError('Failed to load incident');
@@ -102,6 +130,39 @@ export default function IncidentDetailPage() {
     };
 
     fetchIncident();
+  }, [params.id]);
+
+  // Set up real-time subscription for timeline updates
+  useEffect(() => {
+    const id = Array.isArray(params.id) ? params.id[0] : params.id;
+    if (!id) return;
+
+    const channel = supabase
+      .channel(`timeline-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'timeline_entries',
+          filter: `incident_id=eq.${id}`,
+        },
+        (payload) => {
+          // Add new timeline entry to the top
+          const newEntry = {
+            id: payload.new.id,
+            text: payload.new.text,
+            timestamp: payload.new.created_at,
+            hasAudio: false,
+          };
+          setTimeline(prev => [newEntry, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [params.id]);
 
   const toggleTranscription = (entryId: string) => {
@@ -260,6 +321,13 @@ export default function IncidentDetailPage() {
             {incident.description}
           </p>
         </div>
+
+        {/* Moderator Controls */}
+        <ModeratorControls
+          incidentId={incident.id}
+          currentStatus={incident.status}
+          onUpdateStatus={handleStatusUpdate}
+        />
 
         {/* Timeline Section */}
         <div className="mb-8">
