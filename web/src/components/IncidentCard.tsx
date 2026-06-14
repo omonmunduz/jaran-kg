@@ -28,6 +28,37 @@ const statusLabels: Record<string, string> = {
   closed: 'Closed',
 };
 
+// Get emoji for category icon
+const getCategoryEmoji = (icon: string): string => {
+  const emojiMap: Record<string, string> = {
+    // New icon mappings
+    traffic: '🚗',
+    shield: '🛡️',
+    flame: '🔥',
+    zap: '⚡',
+    leaf: '🌿',
+    building: '🏢',
+    // Legacy mappings (for backward compatibility)
+    health: '🏥',
+    road: '🛣️',
+    security: '🚨',
+    lighting: '💡',
+    garbage: '🗑️',
+    utilities: '💧',
+    education: '💡',
+    safety: '🚨',
+    vandalism: '🏚️',
+    noise: '📢',
+    environment: '🌳',
+    construction: '🚧',
+    animal: '🐾',
+    flood: '🌊',
+    other: '📍',
+  };
+
+  return emojiMap[icon?.toLowerCase()] ?? '📍';
+};
+
 // Mock view count - in a real app, this would come from the database
 const getViewCount = () => {
   return Math.floor(Math.random() * 100) + 1;
@@ -74,7 +105,7 @@ export function IncidentCard({
             className="rounded px-2 py-1 text-sm font-semibold text-white"
             style={{ backgroundColor: incident.category.color }}
           >
-            {incident.category.icon && <span className="mr-1">📍</span>}
+            <span className="mr-1">{getCategoryEmoji(incident.category.icon)}</span>
             {incident.category.name_ru}
           </div>
           <span

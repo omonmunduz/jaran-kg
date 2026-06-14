@@ -17,6 +17,14 @@ interface IncidentMapViewProps {
 
 const getCategoryEmoji = (icon: string): string => {
   const emojiMap: Record<string, string> = {
+    // New icon mappings
+    traffic: '🚗',
+    shield: '🛡️',
+    flame: '🔥',
+    zap: '⚡',
+    leaf: '🌿',
+    building: '🏢',
+    // Legacy mappings (for backward compatibility)
     health: '🏥',
     road: '🛣️',
     security: '🚨',
@@ -28,10 +36,8 @@ const getCategoryEmoji = (icon: string): string => {
     vandalism: '🏚️',
     noise: '📢',
     environment: '🌳',
-    traffic: '🚗',
     construction: '🚧',
     animal: '🐾',
-    fire: '🔥',
     flood: '🌊',
     other: '📍',
   };
