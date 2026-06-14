@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import AdminNavLink from '@/components/AdminNavLink';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,6 +62,7 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
+            <AdminNavLink />
           </nav>
 
           {/* Desktop CTA */}
@@ -128,25 +130,54 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <div className="flex flex-col space-y-3 pt-3 border-t border-gray-800 mt-3">
-                {user ? (
-                  <>
+              <AdminNavLink />
+              {user ? (
+                <>
+                  <div className="flex flex-col space-y-3">
                     <span className="text-gray-300 text-center py-2">Hello, {user.email}</span>
+                    <div className="pt-3 border-t border-gray-800">
+                      {navigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className="block text-gray-300 hover:text-amber-500 transition-colors font-medium py-2"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                      <AdminNavLink />
+                    </div>
                     <Button variant="outline" onClick={handleSignOut} className="w-full justify-start">
                       Sign Out
                     </Button>
-                  </>
-                ) : (
-                  <>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-col space-y-3">
+                    {navigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="block text-gray-300 hover:text-amber-500 transition-colors font-medium py-2"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                    <AdminNavLink />
+                  </div>
+                  <div className="pt-3 border-t border-gray-800 mt-3">
                     <Button variant="outline" asChild className="w-full justify-start">
                       <Link href="/auth/login">Sign In</Link>
                     </Button>
                     <Button asChild className="w-full">
                       <Link href="/report">Report Issue</Link>
                     </Button>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
